@@ -119,7 +119,7 @@ class MIMRGNN(nn.Module):
         self.conv_modules = Sequential('x, edge_index', conv_modules_list)
         self.maxpool2d = nn.MaxPool2d(kernel_size=3, stride=3, padding=0)
 
-    def preprocess(self, x):
+    def _preprocess(self, x):
         # input: b, h, w, c(binary map)
         # output: graph batch
 
@@ -128,19 +128,15 @@ class MIMRGNN(nn.Module):
         map_graphs = []
         for i in range(b):
             binary_map = x[i,:,:]
-            print(binary_map)
             _, h, w = binary_map.shape
 
-            visualize_map(binary_map.squeeze().detach().cpu())
+            #visualize_map(binary_map.squeeze().detach().cpu())
             while h*w > self.map_size_limit:
                 binary_map = self.maxpool2d(binary_map)
                 binary_map = binary_map.round()
                 _, h, w = binary_map.shape
-                print(h*w, binary_map.shape)
             
             map_graph = binary_map_to_graph(binary_map.squeeze())
-            visualize_graph(map_graph)
-            print(map_graph)
             map_graphs.append(map_graph)
             map_graphs_batch = Batch.from_data_list(map_graphs)
 
@@ -149,15 +145,15 @@ class MIMRGNN(nn.Module):
 
     def forward(self, map):
         
-        batch = self.preprocess(map)
+        batch = self._preprocess(map)
 
-        x = batch.x
-        edge_index = batch.edge_index
-        b = batch.batch
+        x = batch.x.cuda()
+        edge_index = batch.edge_index.cuda()
+        b = batch.batch.cuda()
         
         x = self.conv_modules(x, edge_index=edge_index)
         
-        return torch_geometric.nn.global_mean_pool(x, b)
+        return torch.sigmoid(torch_geometric.nn.global_mean_pool(x, b))
 
             
             

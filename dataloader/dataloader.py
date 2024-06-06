@@ -1,5 +1,6 @@
 import os
 from PIL import Image
+import torch
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import torchvision.transforms as transforms
@@ -13,6 +14,7 @@ class MaskDataset(Dataset):
             #transforms.Grayscale(num_output_channels=1),
             transforms.ToTensor()
         ])
+        print('Dataset size: ', self.__len__())
 
     def _get_all_image_files(self, directory):
         image_files = []
@@ -28,8 +30,8 @@ class MaskDataset(Dataset):
     def __getitem__(self, idx):
         img_path = self.image_paths[idx]
         image = Image.open(img_path).convert('L') 
-        #image = (np.array(image) > 127).astype(np.int8``) # check if pixel value is larger than 127 (half of 255)
-        image = self.transform(image)
+        image = (np.array(image) > 127).astype(np.int8) # check if pixel value is larger than 127 (half of 255)
+        image = self.transform(image).to(torch.float32)
         return image
 
 def create_dataloader(directory, batch_size=32, shuffle=True, num_workers=2):

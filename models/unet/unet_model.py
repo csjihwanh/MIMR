@@ -24,21 +24,17 @@ class UNet(nn.Module):
         self.up3 = Up(16, 8 // factor, bilinear)
         self.up4 = Up(8, 4, bilinear)
         self.outc = OutConv(4, n_classes)
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        print('x1')
         x1 = self.inc(x)
         x2 = self.down1(x1)
-        print('x2')
         x3 = self.down2(x2)
         x4 = self.down3(x3)
         x5 = self.down4(x4)
-        print('wow')
         x = self.up1(x5, x4)
         x = self.up2(x, x3)
-        print('iambobo')
         x = self.up3(x, x2)
         x = self.up4(x, x1)
-        print('gogo')
-        logits = self.outc(x)
+        logits = self.sigmoid(self.outc(x))
         return logits
